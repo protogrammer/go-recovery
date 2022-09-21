@@ -77,7 +77,11 @@ func (msg *PanicMessage) StringIndent(indent uint) string {
 		if i == 0 {
 			processIndent = indentString
 		}
-		arr = append(arr, fmt.Sprint(fullIndent, processIndent, *frame.Process))
+		process := "unknown"
+		if frame.Process != nil {
+			process = *frame.Process
+		}
+		arr = append(arr, fmt.Sprint(fullIndent, processIndent, process))
 		metadataIndent := fullIndent + indentString
 		metadataIndent2 := metadataIndent + indentString
 		for j := range frame.Metadata {
