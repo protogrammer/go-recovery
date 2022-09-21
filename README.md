@@ -18,7 +18,9 @@ var rc = recovery.CreateConfig(func(msg recovery.PanicMessage) {
 
 func fun(a, b int) int {
 	defer rc.Recur("fun")
-	defer recovery.Comment(fmt.Sprintf("a = %d, b = %d", a, b))
+	defer recovery.CommentResult(func() string {
+		return fmt.Sprintf("a = %d, b = %d", a, b)
+	})
 	return a / b
 }
 
