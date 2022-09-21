@@ -2,6 +2,7 @@ package recovery
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"strings"
 )
@@ -56,13 +57,17 @@ func PanicMessageFromError(err any) PanicMessage {
 	return msg
 }
 
-func (msg *PanicMessage) String() string {
+func (msg PanicMessage) String() string {
 	return msg.StringIndent(0)
+}
+
+func (msg PanicMessage) Log() {
+	log.Print("\n", msg.String())
 }
 
 const indentString string = "    "
 
-func (msg *PanicMessage) StringIndent(indent uint) string {
+func (msg PanicMessage) StringIndent(indent uint) string {
 	fullIndent := strings.Repeat(indentString, int(indent))
 	arr := []string{
 		fmt.Sprintf("%sPanic: %+v", fullIndent, msg.Err),
@@ -197,14 +202,39 @@ func (config Config) Recover(process string) {
 	config.perform(msg, RECOVER)
 }
 
-func Comment(s string) {
+func Comment(values ...any) {
 	err := recover()
 	if err == nil {
 		return
 	}
 
 	msg := PanicMessageFromError(err)
-	msg.AddMetadata(CommentType(s))
+	msg.AddMetadata(CommentType(fmt.Sprint(values...)))
+
+	panic(msg)
+}
+
+func Commentln(values ...any) {
+	err := recover()
+	if err == nil {
+		return
+	}
+
+	msg := PanicMessageFromError(err)
+	s := fmt.Sprintln(values...)
+	msg.AddMetadata(CommentType(s[:len(s)-1]))
+
+	panic(msg)
+}
+
+func Commentf(format string, values ...any) {
+	err := recover()
+	if err == nil {
+		return
+	}
+
+	msg := PanicMessageFromError(err)
+	msg.AddMetadata(CommentType(fmt.Sprintf(format, values...)))
 
 	panic(msg)
 }
