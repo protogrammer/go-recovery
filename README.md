@@ -12,15 +12,11 @@ import (
 	"log"
 )
 
-var rc = recovery.CreateConfig(func(msg recovery.PanicMessage) {
-	log.Print("\n" + msg.String())
-}, nil)
+var rc = recovery.CreateConfig(recovery.PanicMessage.Log, nil)
 
 func fun(a, b int) int {
 	defer rc.Recur("fun")
-	defer recovery.CommentResult(func() string {
-		return fmt.Sprintf("a = %d, b = %d", a, b)
-	})
+	defer recovery.Commentf("a = %d, b = %d", a, b)
 	return a / b
 }
 
