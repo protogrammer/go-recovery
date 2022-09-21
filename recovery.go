@@ -27,6 +27,7 @@ const (
 	BLOCK PanicHandlerEnum = iota
 	STOP
 	RECUR
+	RECOVER
 )
 
 type HandlePanicFunc func(PanicMessage)
@@ -182,6 +183,18 @@ func (config Config) Recur(process string) {
 	msg.AddProcess(process)
 
 	config.perform(msg, RECUR)
+}
+
+func (config Config) Recover(process string) {
+	err := recover()
+	if err == nil {
+		return
+	}
+
+	msg := PanicMessageFromError(err)
+	msg.AddProcess(process)
+
+	config.perform(msg, RECOVER)
 }
 
 func Comment(s string) {
