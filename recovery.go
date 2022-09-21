@@ -2,6 +2,7 @@ package recovery
 
 import (
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"log"
 	"os"
 	"strings"
@@ -70,7 +71,7 @@ const indentString string = "    "
 func (msg PanicMessage) StringIndent(indent uint) string {
 	fullIndent := strings.Repeat(indentString, int(indent))
 	arr := []string{
-		fmt.Sprintf("%sPanic: %+v", fullIndent, msg.Err),
+		spew.Sprintf("%sPanic: %+v", fullIndent, msg.Err),
 		fmt.Sprintf("%sType: %T", fullIndent, msg.Err),
 		fmt.Sprint(fullIndent, "Call stack:"),
 	}
@@ -99,11 +100,11 @@ func (msg PanicMessage) StringIndent(indent uint) string {
 			} else if capture, ok := metadata.(CaptureType); ok {
 				arr = append(arr,
 					metadataIndent+"Capture:",
-					fmt.Sprintf("%s%+v", metadataIndent2, capture))
+					spew.Sprintf("%s%#+v", metadataIndent2, capture))
 			} else {
 				arr = append(arr,
 					metadataIndent+"Foreign metadata:",
-					fmt.Sprintf("%s%T %+v", metadataIndent2, metadata, metadata))
+					spew.Sprintf("%s%#+v", metadataIndent2, metadata))
 			}
 		}
 	}
