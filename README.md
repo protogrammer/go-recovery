@@ -8,7 +8,7 @@ package main
 
 import (
 	"fmt"
-	recovery "go-recovery"
+	recovery "https://github.com/protogrammer/go-recovery/"
 	"log"
 )
 
