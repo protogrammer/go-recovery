@@ -209,6 +209,18 @@ func Comment(s string) {
 	panic(msg)
 }
 
+func CommentResult(f func() string) {
+	err := recover()
+	if err == nil {
+		return
+	}
+
+	msg := PanicMessageFromError(err)
+	msg.AddMetadata(CommentType(f()))
+
+	panic(msg)
+}
+
 func Capture(value any) {
 	err := recover()
 	if err == nil {
@@ -217,6 +229,18 @@ func Capture(value any) {
 
 	msg := PanicMessageFromError(err)
 	msg.AddMetadata(CaptureType(value))
+
+	panic(msg)
+}
+
+func CaptureResult(f func() any) {
+	err := recover()
+	if err == nil {
+		return
+	}
+
+	msg := PanicMessageFromError(err)
+	msg.AddMetadata(CaptureType(f()))
 
 	panic(msg)
 }
