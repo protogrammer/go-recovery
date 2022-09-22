@@ -7,7 +7,6 @@ A small library for panic handling in golang
 package main
 
 import (
-	"fmt"
 	recovery "github.com/protogrammer/go-recovery"
 	"log"
 )
