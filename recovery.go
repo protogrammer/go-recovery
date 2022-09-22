@@ -93,7 +93,7 @@ func (msg PanicMessage) StringIndent(indent uint) string {
 		for j := range frame.Metadata {
 			metadata := frame.Metadata[len(frame.Metadata)-j-1]
 			if msg1, ok := metadata.(PanicMessage); ok {
-				arr = append(arr, metadataIndent+"Secondary panic:", msg1.StringIndent(indent+2))
+				arr = append(arr, metadataIndent+"Secondary panic:", msg1.StringIndent(indent+1))
 			} else if comment, ok := metadata.(CommentType); ok {
 				arr = append(arr, metadataIndent+"Comment: "+string(comment))
 			} else if capture, ok := metadata.(CaptureType); ok {
