@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"sync"
 )
 
 type CommentType string
@@ -66,6 +67,28 @@ func (msg PanicMessage) Log() {
 }
 
 const indentString string = "    "
+
+var finallyFuncs []func()
+var finallyMutex sync.Mutex
+
+func Finally(finally func()) {
+	finallyMutex.Lock()
+	defer finallyMutex.Unlock()
+	finallyFuncs = append(finallyFuncs, finally)
+}
+
+func DoFinally() {
+	finallyMutex.Lock()
+	defer finallyMutex.Unlock()
+	for _, f := range finallyFuncs {
+		f()
+	}
+}
+
+func Stop() {
+	DoFinally()
+	os.Exit(-1)
+}
 
 func (msg PanicMessage) StringIndent(indent uint) string {
 	fullIndent := strings.Repeat(indentString, int(indent))
@@ -148,7 +171,7 @@ func (config Config) perform(msg PanicMessage, panicHandler PanicHandlerEnum) {
 		if config.handlePanic != nil {
 			config.handlePanic(msg)
 		}
-		os.Exit(-1)
+		Stop()
 	case RECUR:
 		panic(msg)
 	}
