@@ -68,28 +68,6 @@ func (msg PanicMessage) Log() {
 
 const indentString string = "    "
 
-var finallyFuncs []func()
-var finallyMutex sync.Mutex
-
-func Finally(finally func()) {
-	finallyMutex.Lock()
-	defer finallyMutex.Unlock()
-	finallyFuncs = append(finallyFuncs, finally)
-}
-
-func DoFinally() {
-	finallyMutex.Lock()
-	defer finallyMutex.Unlock()
-	for _, f := range finallyFuncs {
-		f()
-	}
-}
-
-func Stop() {
-	DoFinally()
-	os.Exit(-1)
-}
-
 func (msg PanicMessage) StringIndent(indent uint) string {
 	fullIndent := strings.Repeat(indentString, int(indent))
 	arr := []string{
@@ -156,6 +134,28 @@ func (msg *PanicMessage) AddMetadata(metadata StackMetadata) {
 		return
 	}
 	msg.CallStack[n-1].Metadata = append(msg.CallStack[n-1].Metadata, metadata)
+}
+
+var finallyFuncs []func()
+var finallyMutex sync.Mutex
+
+func Finally(finally func()) {
+	finallyMutex.Lock()
+	defer finallyMutex.Unlock()
+	finallyFuncs = append(finallyFuncs, finally)
+}
+
+func DoFinally() {
+	finallyMutex.Lock()
+	defer finallyMutex.Unlock()
+	for _, f := range finallyFuncs {
+		f()
+	}
+}
+
+func Stop() {
+	DoFinally()
+	os.Exit(-1)
 }
 
 func (config Config) perform(msg PanicMessage, panicHandler PanicHandlerEnum) {
