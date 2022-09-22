@@ -21,6 +21,7 @@ func fun(a, b int) int {
 }
 
 func main() {
+	defer recovery.DoFinally() // not obligatory
 	defer rc.Block("main")
 	x := fun(5, 0)
 	log.Print(x)
