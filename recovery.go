@@ -48,11 +48,11 @@ func CreateConfig(handlePanic HandlePanicFunc, specifyBehavior SpecifyBehaviorFu
 	}
 }
 
-func PanicMessageFromError(err any) PanicMessage {
-	if msg, ok := err.(PanicMessage); ok {
+func PanicMessageFromError(err any) *PanicMessage {
+	if msg, ok := err.(*PanicMessage); ok {
 		return msg
 	}
-	return PanicMessage{
+	return &PanicMessage{
 		CallStack: nil,
 		Err:       err,
 	}
@@ -158,18 +158,18 @@ func Stop() {
 	os.Exit(-1)
 }
 
-func (config Config) perform(msg PanicMessage, panicHandler PanicHandlerEnum) {
+func (config Config) perform(msg *PanicMessage, panicHandler PanicHandlerEnum) {
 	if config.specifyBehavior != nil {
 		panicHandler = config.specifyBehavior(msg.Err, panicHandler)
 	}
 	switch panicHandler {
 	case BLOCK:
 		if config.handlePanic != nil {
-			config.handlePanic(msg)
+			config.handlePanic(*msg)
 		}
 	case STOP:
 		if config.handlePanic != nil {
-			config.handlePanic(msg)
+			config.handlePanic(*msg)
 		}
 		Stop()
 	case RECUR:
