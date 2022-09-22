@@ -48,14 +48,13 @@ func CreateConfig(handlePanic HandlePanicFunc, specifyBehavior SpecifyBehaviorFu
 }
 
 func PanicMessageFromError(err any) PanicMessage {
-	msg := PanicMessage{
+	if msg, ok := err.(PanicMessage); ok {
+		return msg
+	}
+	return PanicMessage{
 		CallStack: nil,
 		Err:       err,
 	}
-	if msg1, ok := err.(PanicMessage); ok {
-		msg = msg1
-	}
-	return msg
 }
 
 func (msg PanicMessage) String() string {
