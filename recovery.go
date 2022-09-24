@@ -66,6 +66,10 @@ func (msg PanicMessage) Log() {
 	log.Print("\n", msg.String())
 }
 
+func (msg PanicMessage) LogWithMessage(msg1 string) {
+	log.Print(msg1, "\n", msg.String())
+}
+
 const indentString string = "    "
 
 func (msg PanicMessage) StringIndent(indent uint) string {
@@ -139,17 +143,36 @@ func (msg *PanicMessage) AddMetadata(metadata StackMetadata) {
 var finallyFuncs []func()
 var finallyMutex sync.Mutex
 
+type FinallyFuncIsNilError struct{}
+
 func Finally(finally func()) {
+	if finally == nil {
+		panic(FinallyFuncIsNilError{})
+	}
 	finallyMutex.Lock()
 	defer finallyMutex.Unlock()
 	finallyFuncs = append(finallyFuncs, finally)
 }
 
+func safeCall(f func()) {
+	defer func() {
+		defer Recover()
+		err := recover()
+		if err == nil {
+			return
+		}
+		msg := PanicMessageFromError(err)
+		msg.LogWithMessage("[package recovery] panic occurred in one of the finally functions")
+	}()
+	f()
+}
+
 func DoFinally() {
 	finallyMutex.Lock()
 	defer finallyMutex.Unlock()
-	for _, f := range finallyFuncs {
-		f()
+	n := len(finallyFuncs)
+	for i := range finallyFuncs {
+		safeCall(finallyFuncs[n-i-1])
 	}
 }
 
