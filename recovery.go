@@ -152,11 +152,11 @@ func Finally(finally func()) {
 
 func safeCall(f func()) {
 	defer func() {
-		defer Recover()
 		err := recover()
 		if err == nil {
 			return
 		}
+		defer Recover()
 		msg := PanicMessageFromError(err)
 		msg.AddProcess("recovery.DoFinally.safeCall.deferLambda")
 		msg.Log()
