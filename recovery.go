@@ -66,10 +66,6 @@ func (msg PanicMessage) Log() {
 	log.Print("\n", msg.String())
 }
 
-func (msg PanicMessage) LogWithMessage(msg1 string) {
-	log.Print(msg1, "\n", msg.String())
-}
-
 const indentString string = "    "
 
 func (msg PanicMessage) StringIndent(indent uint) string {
@@ -162,7 +158,8 @@ func safeCall(f func()) {
 			return
 		}
 		msg := PanicMessageFromError(err)
-		msg.LogWithMessage("[package recovery] panic occurred in one of the finally functions")
+		msg.AddProcess("recovery.DoFinally.safeCall.deferLambda")
+		msg.Log()
 	}()
 	f()
 }
