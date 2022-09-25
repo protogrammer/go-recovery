@@ -407,7 +407,7 @@ type AssertNotInfo struct {
 }
 
 func AssertNot(cond bool, msg string) {
-	if cond {
+	if !cond {
 		return
 	}
 	panic(AssertNotInfo{
