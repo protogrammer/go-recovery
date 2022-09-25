@@ -379,3 +379,43 @@ func IfNotPanic(f func()) {
 func Recover() {
 	recover()
 }
+
+type Assertion string
+
+const (
+	StandardAssertion Assertion = "StandardAssertion"
+	FalseAssertion    Assertion = "FalseAssertion"
+	EqAssertion       Assertion = "EqAssertion"
+	NeqAssertion      Assertion = "NeqAssertion"
+)
+
+type AssertionFailed struct {
+	Message string
+	Type    Assertion
+	Args    []any
+}
+
+func Assert(cond bool, msg string) {
+	if cond {
+		return
+	}
+	panic(AssertionFailed{msg, StandardAssertion, nil})
+}
+
+func AssertFalse(msg string) {
+	panic(AssertionFailed{msg, FalseAssertion, nil})
+}
+
+func AssertEq[T comparable](a T, b T, msg string) {
+	if a == b {
+		return
+	}
+	panic(AssertionFailed{msg, EqAssertion, []any{a, b}})
+}
+
+func AssertNeq[T comparable](a T, b T, msg string) {
+	if a != b {
+		return
+	}
+	panic(AssertionFailed{msg, NeqAssertion, []any{a, b}})
+}
