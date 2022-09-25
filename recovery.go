@@ -380,42 +380,79 @@ func Recover() {
 	recover()
 }
 
-type Assertion string
-
-const (
-	StandardAssertion Assertion = "StandardAssertion"
-	FalseAssertion    Assertion = "FalseAssertion"
-	EqAssertion       Assertion = "EqAssertion"
-	NeqAssertion      Assertion = "NeqAssertion"
-)
-
-type AssertionFailed struct {
+type AssertInfo struct {
 	Message string
-	Type    Assertion
-	Args    []any
 }
 
 func Assert(cond bool, msg string) {
 	if cond {
 		return
 	}
-	panic(AssertionFailed{msg, StandardAssertion, nil})
+	panic(AssertInfo{
+		Message: msg,
+	})
+}
+
+func Assertf(cond bool, format string, a ...any) {
+	if cond {
+		return
+	}
+	panic(AssertInfo{
+		Message: fmt.Sprintf(format, a...),
+	})
+}
+
+type AssertNotInfo struct {
+	Message string
+}
+
+func AssertNot(cond bool, msg string) {
+	if cond {
+		return
+	}
+	panic(AssertNotInfo{
+		Message: msg,
+	})
+}
+
+type AssertFalseInfo struct {
+	Message string
 }
 
 func AssertFalse(msg string) {
-	panic(AssertionFailed{msg, FalseAssertion, nil})
+	panic(AssertFalseInfo{
+		Message: msg,
+	})
+}
+
+type AssertEqInfo[T comparable] struct {
+	Message    string
+	Arg1, Arg2 T
 }
 
 func AssertEq[T comparable](a T, b T, msg string) {
 	if a == b {
 		return
 	}
-	panic(AssertionFailed{msg, EqAssertion, []any{a, b}})
+	panic(AssertEqInfo[T]{
+		Message: msg,
+		Arg1:    a,
+		Arg2:    b,
+	})
+}
+
+type AssertNeqInfo[T comparable] struct {
+	Message    string
+	Arg1, Arg2 T
 }
 
 func AssertNeq[T comparable](a T, b T, msg string) {
 	if a != b {
 		return
 	}
-	panic(AssertionFailed{msg, NeqAssertion, []any{a, b}})
+	panic(AssertNeqInfo[T]{
+		Message: msg,
+		Arg1:    a,
+		Arg2:    b,
+	})
 }
