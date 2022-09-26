@@ -193,7 +193,14 @@ func (config Config) perform(err any, process string, panicHandler PanicHandlerE
 	msg.AddProcess(process)
 
 	if config.specifyBehavior != nil {
-		panicHandler = config.specifyBehavior(msg.Err, panicHandler)
+		ok := false
+		SafeCall("Config.specifyBehavior", func() {
+			panicHandler = config.specifyBehavior(msg.Err, panicHandler)
+			ok = true
+		})
+		if !ok {
+			Stop()
+		}
 	}
 
 	switch panicHandler {
