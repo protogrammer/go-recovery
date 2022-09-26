@@ -175,6 +175,7 @@ func DoFinally() {
 			SafeCall("recovery.DoFinally.SafeCall.deferLambda", f)
 			finallyMutex.Lock()
 		}
+		finallyFuncs = nil
 	})
 }
 
