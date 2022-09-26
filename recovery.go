@@ -5,6 +5,7 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	"log"
 	"os"
+	"reflect"
 	"strings"
 	"sync"
 )
@@ -150,7 +151,7 @@ func Finally(finally func()) {
 	finallyFuncs = append(finallyFuncs, finally)
 }
 
-func safeCall(f func()) {
+func SafeCall(process string, f func()) {
 	defer func() {
 		err := recover()
 		if err == nil {
@@ -158,19 +159,23 @@ func safeCall(f func()) {
 		}
 		defer Recover()
 		msg := PanicMessageFromError(err)
-		msg.AddProcess("recovery.DoFinally.safeCall.deferLambda")
+		msg.AddProcess(process)
 		msg.Log()
 	}()
 	f()
 }
 
 func DoFinally() {
-	finallyMutex.Lock()
-	defer finallyMutex.Unlock()
-	n := len(finallyFuncs)
-	for i := range finallyFuncs {
-		safeCall(finallyFuncs[n-i-1])
-	}
+	SafeCall("recovery.DoFinally", func() {
+		finallyMutex.Lock()
+		defer finallyMutex.Unlock()
+		for i := 0; i < len(finallyFuncs); i++ {
+			f := finallyFuncs[i]
+			finallyMutex.Unlock()
+			SafeCall("recovery.DoFinally.SafeCall.deferLambda", f)
+			finallyMutex.Lock()
+		}
+	})
 }
 
 func Stop() {
@@ -178,10 +183,18 @@ func Stop() {
 	os.Exit(-1)
 }
 
-func (config Config) perform(msg *PanicMessage, panicHandler PanicHandlerEnum) {
+func (config Config) perform(err any, process string, panicHandler PanicHandlerEnum) {
+	if err == nil {
+		return
+	}
+
+	msg := PanicMessageFromError(err)
+	msg.AddProcess(process)
+
 	if config.specifyBehavior != nil {
 		panicHandler = config.specifyBehavior(msg.Err, panicHandler)
 	}
+
 	switch panicHandler {
 	case BLOCK:
 		if config.handlePanic != nil {
@@ -197,52 +210,71 @@ func (config Config) perform(msg *PanicMessage, panicHandler PanicHandlerEnum) {
 	}
 }
 
-func (config Config) Block(process string) {
-	err := recover()
-	if err == nil {
-		return
+func (config Config) performCall(f func(string), process string, function any, args []any) []any {
+	defer f(process)
+	argValues := make([]reflect.Value, len(args))
+	for i, v := range args {
+		argValues[i] = reflect.ValueOf(v)
 	}
+	resultValues := reflect.ValueOf(function).Call(argValues)
+	result := make([]any, len(resultValues))
+	for i, v := range resultValues {
+		result[i] = v.Interface()
+	}
+	return result
+}
 
-	msg := PanicMessageFromError(err)
-	msg.AddProcess(process)
+func (config Config) performCallDefer(f func(string), process string, deferFunction func(), function any, args []any) []any {
+	defer Defer(deferFunction)
+	return config.performCall(f, process, function, args)
+}
 
-	config.perform(msg, BLOCK)
+func (config Config) Block(process string) {
+	config.perform(recover(), process, BLOCK)
+}
+
+func (config Config) BlockCall(process string, function any, args ...any) []any {
+	return config.performCall(config.Block, process, function, args)
+}
+
+func (config Config) BlockCallDefer(process string, deferFunction func(), function any, args ...any) []any {
+	return config.performCallDefer(config.Block, process, deferFunction, function, args)
 }
 
 func (config Config) Stop(process string) {
-	err := recover()
-	if err == nil {
-		return
-	}
+	config.perform(recover(), process, STOP)
+}
 
-	msg := PanicMessageFromError(err)
-	msg.AddProcess(process)
+func (config Config) StopCall(process string, function any, args ...any) []any {
+	return config.performCall(config.Stop, process, function, args)
+}
 
-	config.perform(msg, STOP)
+func (config Config) StopCallDefer(process string, deferFunction func(), function any, args ...any) []any {
+	return config.performCallDefer(config.Stop, process, deferFunction, function, args)
 }
 
 func (config Config) Recur(process string) {
-	err := recover()
-	if err == nil {
-		return
-	}
+	config.perform(recover(), process, RECUR)
+}
 
-	msg := PanicMessageFromError(err)
-	msg.AddProcess(process)
+func (config Config) RecurCall(process string, function any, args ...any) []any {
+	return config.performCall(config.Recur, process, function, args)
+}
 
-	config.perform(msg, RECUR)
+func (config Config) RecurCallDefer(process string, deferFunction func(), function any, args ...any) []any {
+	return config.performCallDefer(config.Recur, process, deferFunction, function, args)
 }
 
 func (config Config) Recover(process string) {
-	err := recover()
-	if err == nil {
-		return
-	}
+	config.perform(recover(), process, RECOVER)
+}
 
-	msg := PanicMessageFromError(err)
-	msg.AddProcess(process)
+func (config Config) RecoverCall(process string, function any, args ...any) []any {
+	return config.performCall(config.Recover, process, function, args)
+}
 
-	config.perform(msg, RECOVER)
+func (config Config) RecoverCallDefer(process string, deferFunction func(), function any, args ...any) []any {
+	return config.performCallDefer(config.Recover, process, deferFunction, function, args)
 }
 
 func Comment(values ...any) {
@@ -454,5 +486,18 @@ func AssertNeq[T comparable](a T, b T, msg string) {
 		Message: msg,
 		Arg1:    a,
 		Arg2:    b,
+	})
+}
+
+type AssertNotNilInfo[T any] struct {
+	Message string
+}
+
+func AssertNotNil[T any](ptr *T, msg string) {
+	if ptr != nil {
+		return
+	}
+	panic(AssertNotNilInfo[T]{
+		Message: msg,
 	})
 }
