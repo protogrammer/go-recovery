@@ -169,13 +169,14 @@ func DoFinally() {
 	SafeCall("recovery.DoFinally", func() {
 		finallyMutex.Lock()
 		defer finallyMutex.Unlock()
-		for i := 0; i < len(finallyFuncs); i++ {
-			f := finallyFuncs[i]
+		for len(finallyFuncs) > 0 {
+			last := len(finallyFuncs) - 1
+			f := finallyFuncs[last]
+			finallyFuncs = finallyFuncs[:last]
 			finallyMutex.Unlock()
 			SafeCall("recovery.DoFinally.SafeCall.deferLambda", f)
 			finallyMutex.Lock()
 		}
-		finallyFuncs = nil
 	})
 }
 
