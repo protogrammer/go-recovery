@@ -196,6 +196,7 @@ func (config Config) perform(err any, process string, panicHandler PanicHandlerE
 	if config.specifyBehavior != nil {
 		ok := false
 		SafeCall("Config.specifyBehavior", func() {
+			defer Comment("fatal - panic in function config.specifyBehavior")
 			panicHandler = config.specifyBehavior(msg.Err, panicHandler)
 			ok = true
 		})
